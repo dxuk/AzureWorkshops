@@ -1,0 +1,19 @@
+﻿{
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "name": "QueuedQuestion",
+      "queueName": "questionqueue",
+      "connection": "storageConnection",
+      "direction": "in"
+    },
+    {
+      "type": "table",
+      "name": "outQuestion",
+      "tableName": "Question",
+      "connection": "storageConnection",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}

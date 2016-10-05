@@ -1,0 +1,27 @@
+﻿{
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get",
+        "post"
+      ],
+      "authLevel": "anonymous"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "table",
+      "name": "outQuestion",
+      "tableName": "Questions",
+      "connection": "storageConnection",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}

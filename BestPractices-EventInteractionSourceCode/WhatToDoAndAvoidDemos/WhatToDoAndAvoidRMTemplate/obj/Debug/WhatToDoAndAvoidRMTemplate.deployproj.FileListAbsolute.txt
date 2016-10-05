@@ -1,0 +1,1 @@
+C:\Users\wieastbu\Source\Repos\AzureWhatToDoAndWhatToAvoid\WhatToDoAndAvoidDemos\WhatToDoAndAvoidRMTemplate\obj\Debug\WhatToDoAndAvoidRMTemplate.deployprojResolveAssemblyReference.cache

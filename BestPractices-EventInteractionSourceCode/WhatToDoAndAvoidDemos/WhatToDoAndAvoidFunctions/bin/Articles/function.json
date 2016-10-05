@@ -1,0 +1,34 @@
+﻿{
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get"
+      ],
+      "authLevel": "anonymous"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "table",
+      "name": "inTable",
+      "tableName": "article",
+      "take": "1",
+      "connection": "storageConnection",
+      "direction": "in"
+    },
+    {
+      "type": "table",
+      "name": "inTable2",
+      "tableName": "articledetail",
+      "connection": "storageConnection",
+      "direction": "in"
+    }
+  ],
+  "disabled": false
+}

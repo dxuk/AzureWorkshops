@@ -1,0 +1,578 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+
+    "Deployment_Prefix": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "devdep"
+    },
+
+    "Deployment_Location1": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "West Europe"
+    },
+
+    "Deployment_Location2": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "West Europe"
+    },
+
+    "WebSite_SvcPlanSKU": {
+      "type": "string",
+      "allowedValues": [
+        "Free",
+        "Shared",
+        "Basic",
+        "Standard"
+      ],
+      "defaultValue": "Standard"
+    },
+    "WebSite_SvcPlanWorkerSize": {
+      "type": "string",
+      "allowedValues": [
+        "0",
+        "1",
+        "2"
+      ],
+      "defaultValue": "0"
+    },
+    "WebSite_RedisCacheSKUName": {
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "defaultValue": "Basic"
+    },
+    "WebSite_RedisCacheSKUFamily": {
+      "type": "string",
+      "allowedValues": [
+        "C"
+      ],
+      "defaultValue": "C"
+    },
+    "WebSite_RedisCacheSKUCapacity": {
+      "type": "int",
+      "allowedValues": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "defaultValue": 0
+    },
+    "WebSite_RedisCacheRedisVersion": {
+      "type": "string",
+      "allowedValues": [
+        "2.8"
+      ],
+      "defaultValue": "2.8"
+    }
+  },
+
+  "variables": {
+
+    "WebSite_NSvcPlanName": "[concat(parameters('Deployment_Prefix'),'nwebplan')]",
+    "WebSite_WSvcPlanName": "[concat(parameters('Deployment_Prefix'),'wwebplan')]",
+    "WebSite_WWebAppName": "[concat(parameters('Deployment_Prefix'), 'wwebapp')]",
+    "WebSite_NWebAppName": "[concat(parameters('Deployment_Prefix'), 'nwebapp')]",
+
+    "WebSite_WRedisCacheName": "[concat(parameters('Deployment_Prefix'),'wrediscache')]",
+    "WebSite_NRedisCacheName": "[concat(parameters('Deployment_Prefix'),'nrediscache')]",
+
+    "Processing_WStorageAccountName": "[concat(parameters('Deployment_Prefix'),'wprstac')]",
+    "Processing_NStorageAccountName": "[concat(parameters('Deployment_Prefix'),'nprstac')]",
+    "FunctionsSite_WStorageAccountName": "[concat(parameters('Deployment_Prefix'),'wfnstac')]",
+    "FunctionsSite_NStorageAccountName": "[concat(parameters('Deployment_Prefix'),'nfnstac')]",
+
+    "FunctionsSite_WFnAppName": "[concat(parameters('Deployment_Prefix'), 'wfnapp')]",
+    "FunctionsSite_NFnAppName": "[concat(parameters('Deployment_Prefix'), 'nfnapp')]",
+    "APISite_WAPIAppName": "[concat(parameters('Deployment_Prefix'), 'wapiapp')]",
+    "APISite_NAPIAppName": "[concat(parameters('Deployment_Prefix'), 'napiapp')]",
+    "WebSite_CDNProfileName": "[concat(parameters('Deployment_Prefix'),'webcdnprofile')]",
+    "WebSite_CDNOriginName": "[concat(parameters('Deployment_Prefix'),'tm')]",
+    "WebSite_TrafficManagerURL": "[concat(parameters('Deployment_Prefix'),'tm.trafficmanager.net')]",
+    "WebSite_TrafficManagerProfile": "[concat(parameters('Deployment_Prefix'),'tm')]",
+    "WebSite_TrafficManagerWEP:": "[concat(parameters('Deployment_Prefix'),'wwebapp')]",
+    "WebSite_TrafficManagerNEP:": "[concat(parameters('Deployment_Prefix'),'nwebapp')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/trafficManagerProfiles",
+      "name": "WebSite_TrafficManagerProfile",
+      "apiVersion": "2015-11-01",
+      "location": "global",
+      "properties": {
+        "profileStatus": "Enabled",
+        "trafficRoutingMethod": "Weighted",
+        "dnsConfig": {
+          "relativeName": "[variables('WebSite_TrafficManagerProfile')]",
+          "fqdn": "[variables('WebSite_TrafficManagerURL')]",
+          "ttl": 60
+        },
+        "monitorConfig": {
+          "protocol": "HTTP",
+          "port": 80,
+          "path": "/"
+        },
+        "endpoints": [
+          {
+            "name": "Neuwa",
+            "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
+            "properties": {
+              "endpointStatus": "Enabled",
+              "targetResourceId": "[resourceId('Microsoft.Web/sites', variables('WebSite_NWebAppName'))]",
+              "target": "[concat(variables('WebSite_NWebAppName'),'.azurewebsites.net')]",
+              "weight": 1,
+              "priority": 1,
+              "endpointLocation": "[parameters('Deployment_Location2')]"
+            }
+          },
+          {
+            "name": "Neuwa",
+            "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
+            "properties": {
+              "endpointStatus": "Enabled",
+              "targetResourceId": "[resourceId('Microsoft.Web/sites', variables('WebSite_WWebAppName'))]",
+              "target": "[concat(variables('WebSite_WWebAppName'),'.azurewebsites.net')]",
+              "weight": 1,
+              "priority": 1,
+              "endpointLocation": "[parameters('Deployment_Location1')]"
+            }
+          }
+        ]
+      },
+      "resources": [ ],
+      "dependsOn": [ ]
+    },
+    {
+      "name": "[variables('WebSite_WSvcPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[parameters('Deployment_Location1')]",
+      "apiVersion": "2014-06-01",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "WebSite_WSvcPlan"
+      },
+      "properties": {
+        "name": "[variables('WebSite_WSvcPlanName')]",
+        "sku": "[parameters('WebSite_SvcPlanSKU')]",
+        "workerSize": "[parameters('WebSite_SvcPlanWorkerSize')]",
+        "numberOfWorkers": 1
+      },
+      "resources": [
+        {
+          "name": "[variables('WebSite_WWebAppName')]",
+          "type": "Microsoft.Web/sites",
+          "location": "[parameters('Deployment_Location1')]",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/serverfarms/', variables('WebSite_WSvcPlanName'))]"
+          ],
+          "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', variables('WebSite_WSvcPlanName'))]": "Resource",
+            "displayName": "WebSite_WWebApp"
+          },
+          "properties": {
+            "name": "[variables('WebSite_WWebAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', variables('WebSite_WSvcPlanName'))]"
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('WebSite_WWebAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName'))]",
+                "[resourceId('Microsoft.Cache/Redis', variables('WebSite_WRedisCacheName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "redisConnection": "[concat(variables('WebSite_WRedisCacheName'),'.redis.cache.windows.net:6379,allowAdmin=true,syncTimeout=5000,password=',listkeys(resourceId('Microsoft.Cache/Redis', variables('WebSite_WRedisCacheName')), '2016-04-01').primaryKey,',ssl=False,abortConnect=False')]",
+                "storageConnection": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName')), '2015-05-01-preview').key1,';')]"
+
+              },
+              "tags": {
+                "displayName": "WebSite_WWebApp_Settings"
+              }
+            }
+          ]
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "type": "Microsoft.Web/sites",
+          "name": "[variables('FunctionsSite_WFnAppName')]",
+          "location": "[parameters('Deployment_Location1')]",
+          "kind": "functionapp",
+          "properties": {
+            "name": "[variables('FunctionsSite_WFnAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_WSvcPlanName'))]"
+          },
+          "tags": {
+            "displayName": "FunctionsSite_WFnApp"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_WSvcPlanName'))]",
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_WStorageAccountName'))]"
+          ],
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('FunctionsSite_WFnAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_WStorageAccountName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('FunctionsSite_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('FunctionsSite_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+
+                "FUNCTIONS_EXTENSION_VERSION": "latest"
+              },
+              "tags": {
+                "displayName": "FunctionsSite_WFnApp_Settings"
+              }
+            }
+          ]
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "type": "Microsoft.Web/sites",
+          "name": "[variables('APISite_WAPIAppName')]",
+          "location": "[parameters('Deployment_Location1')]",
+          "kind": "apiapp",
+          "properties": {
+            "name": "[variables('APISite_WAPIAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_WSvcPlanName'))]"
+          },
+          "tags": {
+            "displayName": "APISite_WAPIApp"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_WSvcPlanName'))]",
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName'))]"
+          ],
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('APISite_WAPIAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_WStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_WStorageAccountName')), '2015-05-01-preview').key1,';')]",
+
+                "FUNCTIONS_EXTENSION_VERSION": "latest"
+              },
+              "tags": {
+                "displayName": "APISite_WAPIApp_Settings"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "[variables('WebSite_NSvcPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[parameters('Deployment_Location2')]",
+      "apiVersion": "2014-06-01",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "WebSite_NSvcPlan"
+      },
+      "properties": {
+        "name": "[variables('WebSite_NSvcPlanName')]",
+        "sku": "[parameters('WebSite_SvcPlanSKU')]",
+        "workerSize": "[parameters('WebSite_SvcPlanWorkerSize')]",
+        "numberOfWorkers": 1
+      },
+      "resources": [
+        {
+          "name": "[variables('WebSite_NWebAppName')]",
+          "type": "Microsoft.Web/sites",
+          "location": "[parameters('Deployment_Location2')]",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[concat('Microsoft.Web/serverfarms/', variables('WebSite_NSvcPlanName'))]"
+          ],
+          "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', variables('WebSite_NSvcPlanName'))]": "Resource",
+            "displayName": "WebSite_NWebApp"
+          },
+          "properties": {
+            "name": "[variables('WebSite_NWebAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', variables('WebSite_NSvcPlanName'))]"
+          },
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('WebSite_NWebAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName'))]",
+                "[resourceId('Microsoft.Cache/Redis', variables('WebSite_NRedisCacheName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "redisConnection": "[concat(variables('WebSite_NRedisCacheName'),'.redis.cache.windows.net:6379,allowAdmin=true,syncTimeout=5000,password=',listkeys(resourceId('Microsoft.Cache/Redis', variables('WebSite_NRedisCacheName')), '2016-04-01').primaryKey,',ssl=False,abortConnect=False')]",
+                "storageConnection": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName')), '2015-05-01-preview').key1,';')]"
+              },
+              "tags": {
+                "displayName": "WebSite_NWebApp_Settings"
+              }
+            }
+
+          ]
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "type": "Microsoft.Web/sites",
+          "name": "[variables('FunctionsSite_NFnAppName')]",
+          "location": "[parameters('Deployment_Location2')]",
+          "kind": "functionapp",
+          "properties": {
+            "name": "[variables('FunctionsSite_NFnAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_NSvcPlanName'))]"
+          },
+          "tags": {
+            "displayName": "FunctionsSite_NFnApp"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_NSvcPlanName'))]",
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_NStorageAccountName'))]"
+          ],
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('FunctionsSite_NFnAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_NStorageAccountName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('FunctionsSite_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('FunctionsSite_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('FunctionsSite_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+
+                "FUNCTIONS_EXTENSION_VERSION": "latest"
+              },
+              "tags": {
+                "displayName": "FunctionsSite_NFnApp_Settings"
+              }
+            }
+          ]
+        },
+        {
+          "apiVersion": "2015-08-01",
+          "type": "Microsoft.Web/sites",
+          "name": "[variables('APISite_NAPIAppName')]",
+          "location": "[parameters('Deployment_Location2')]",
+          "kind": "apiapp",
+          "properties": {
+            "name": "[variables('APISite_NAPIAppName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_NSvcPlanName'))]"
+          },
+          "tags": {
+            "displayName": "APISite_NAPIApp"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms', variables('WebSite_NSvcPlanName'))]",
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName'))]"
+          ],
+          "resources": [
+            {
+              "apiVersion": "2015-08-01",
+              "name": "appsettings",
+              "type": "config",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('APISite_NAPIAppName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName'))]"
+              ],
+              "properties": {
+                "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('Processing_NStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('Processing_NStorageAccountName')), '2015-05-01-preview').key1,';')]",
+                "FUNCTIONS_EXTENSION_VERSION": "latest"
+              },
+              "tags": {
+                "displayName": "APISite_NAPIApp_Settings"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "Standard_RAGRS",
+        "tier": "Standard"
+      },
+      "kind": "Storage",
+      "name": "[variables('Processing_NStorageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "[parameters('Deployment_Location2')]",
+      "tags": {
+        "displayName": "WebSite_NStorageAccount"
+      },
+      "properties": { },
+      "resources": [ ],
+      "dependsOn": [ ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "Standard_RAGRS",
+        "tier": "Standard"
+      },
+      "kind": "Storage",
+      "name": "[variables('Processing_WStorageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "northeurope",
+      "tags": {
+        "displayName": "Website_WStorageAccount"
+      },
+      "properties": { },
+      "resources": [ ],
+      "dependsOn": [ ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "Storage",
+      "name": "[variables('FunctionsSite_WStorageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "[parameters('Deployment_Location1')]",
+      "tags": {
+        "displayName": "Functions_WStorageAccount"
+      },
+      "properties": { },
+      "resources": [ ],
+      "dependsOn": [ ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "Storage",
+      "name": "[variables('FunctionsSite_NStorageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "[parameters('Deployment_Location2')]",
+      "tags": {
+        "displayName": "Functions_NStorageAccount"
+      },
+      "properties": { },
+      "resources": [ ],
+      "dependsOn": [ ]
+    },
+    {
+      "name": "[variables('WebSite_WRedisCacheName')]",
+      "type": "Microsoft.Cache/Redis",
+      "location": "[parameters('Deployment_Location1')]",
+      "apiVersion": "2014-04-01-preview",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "WebSite_WRedisCache"
+      },
+      "properties": {
+        "sku": {
+          "name": "[parameters('WebSite_RedisCacheSKUName')]",
+          "family": "[parameters('WebSite_RedisCacheSKUFamily')]",
+          "capacity": "[parameters('WebSite_RedisCacheSKUCapacity')]"
+        },
+        "redisVersion": "[parameters('WebSite_RedisCacheRedisVersion')]"
+      }
+    },
+    {
+      "name": "[variables('WebSite_NRedisCacheName')]",
+      "type": "Microsoft.Cache/Redis",
+      "location": "[parameters('Deployment_Location2')]",
+      "apiVersion": "2014-04-01-preview",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "WebSite_NRedisCache"
+      },
+      "properties": {
+        "sku": {
+          "name": "[parameters('WebSite_RedisCacheSKUName')]",
+          "family": "[parameters('WebSite_RedisCacheSKUFamily')]",
+          "capacity": "[parameters('WebSite_RedisCacheSKUCapacity')]"
+        },
+        "redisVersion": "[parameters('WebSite_RedisCacheRedisVersion')]"
+      }
+    },
+    {
+      "name": "[variables('WebSite_CDNProfileName')]",
+      "type": "Microsoft.Cdn/profiles",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-01",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "WebSite_CDN"
+      },
+      "properties": {
+        "sku": {
+          "name": "Standard"
+        }
+      },
+      "resources": [
+        {
+          "name": "[variables('WebSite_CDNOriginName')]",
+          "type": "endpoints",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-06-01",
+          "dependsOn": [
+            "[variables('WebSite_CDNProfileName')]"
+          ],
+          "tags": {
+            "displayName": "WebSite_CDNEndpoint"
+          },
+          "properties": {
+            "originHostHeader": "[variables('WebSite_TrafficManagerURL')]",
+            "isHttpAllowed": true,
+            "isHttpsAllowed": true,
+            "queryStringCachingBehavior": "UseQueryString",
+            "contentTypesToCompress": [
+              "text/plain",
+              "text/html",
+              "text/css",
+              "application/x-javascript",
+              "text/javascript"
+            ],
+            "isCompressionEnabled": "True",
+            "origins": [
+              {
+                "name": "origin1",
+                "properties": {
+                  "hostName": "[variables('WebSite_CDNOriginName')]"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+  ]
+}

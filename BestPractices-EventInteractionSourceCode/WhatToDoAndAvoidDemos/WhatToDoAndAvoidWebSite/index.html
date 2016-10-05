@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DX Demo - Microsoft Azure Evangelism site</title>
+    <meta name="description" content="We evangelise about Microsoft Azure and Web Middle / Back end Tiery cool stuff">
+    <meta name="author" content="Will Eastbury">
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-S7YMK1xjUjSpEnF4P8hPUcgjXYLZKK3fQW1j5ObLSl787II9p8RO9XUGehRmKsxd" crossorigin="anonymous">
+    <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-md-12">
+                <nav class="navbar navbar-default navbar-fixed-top navbar" role="navigation">
+                    <div class="navbar-header">
+                        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+							<span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+						</button> <a class="navbar-brand navbar-inverse" href="index.html">Azure Best Practices</a>
+                    </div>
+                    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                        <ul class="nav navbar-nav" id="menuleft"></ul>
+                        <ul class="nav navbar-nav navbar-right navbar-inverse" id="menuright"></ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="jumbotron">
+                        <div id="progbartop">
+                            <h3>Loading Data...</h3>
+                            <div class="progress progress-striped active">
+                                <div class="progress-bar progress-bar-info" id="progbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <h2 id="contentheader">
+                            <span data-bind="text: Header.Title"></span>
+                        </h2>
+                        <h4>
+                            <span data-bind="text: Header.Abstract"></span>
+                        </h4>
+                    </div>
+                     
+                </div>
+            </div>
+            <div class="col-md-12" id="contentdetail">
+                <div data-bind="foreach: Detail" class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-bind="attr: {href: Link}" class="btn btn-success"><span data-bind="text: Title"></span></a>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <p data-bind="text: Narrative"></p>
+                        <div class="panel-footer">
+                            Date Posted: <span data-bind="text: Date"></span>
+                        </div>
+                    </div>
+                </div>
+           </div>
+
+            <div class="col-md-12" id="contentdetailArticles">
+                <div data-bind="foreach: Detail" class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-bind="attr: {href: Link}" class="btn btn-success"><span data-bind="text: Title"></span></a>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <p data-bind="text: Narrative"></p>
+                        <div class="panel-footer">
+                            Date Posted: <span data-bind="text: Date"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12" id="contentdetailQuestions">
+                <div class="jumbotron">
+  
+                        <h2 id="contentheader2">
+                            <span>Question List for today</span>
+                        </h2>
+                        <h4>
+                            <span>Please ask away and vote for your favourite questions</span>
+                        </h4>
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            Ask a question!
+                        </h3>
+                    </div>
+
+                    <form class="form-horizontal" role="form" id="askaquestionform" data-bind="submit: WriteQuestion">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="AskedBy">
+                                Name
+                            </label>
+                            <div class="col-sm-10">
+                                <input class="form-control" id="AskedBy" data-bind="value: AskedBy" type="text" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="Question">
+                                Question
+                            </label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" rows="3" id="Question" data-bind="value: Question"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="SecCode">
+                                Enter Security Code
+                            </label>
+                            <div class="col-sm-10">
+                                <input class="form-control" id="SecCode" data-bind="value: SecCode" type="number" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="Topic">
+                                Topic
+                            </label>
+                            <div class="col-sm-10">
+                                <select class="form-control" data-bind="value: Topic" id="Topic">
+                                    <option>Resilience, Availability and Disaster Recovery </option>
+                                    <option>Scalability and Performance</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button class="btn btn-success" type="submit">Ask it !</button>
+                            </div>
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <span id="statussend"></span>
+                            </div>
+</div>
+                    </form>
+                </div>
+
+                <div id= "bindingforQuestionlist" data-bind="foreach: $root" class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                           <span data-bind="text: Topic"></span>
+                        </h3>
+                        <p data-bind="text: SubTopic"></p>
+                                           </div>
+                    <div class="panel-body">
+                        <p data-bind="text: Question"></p>
+
+                        <div class="panel-footer">
+                            <p>Asked By: <span data-bind="text: AskedBy"></span></p>
+                            <p>Q-ID: <span data-bind="text: RowKey"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+    <script src="js/fromstackoverflow.js"></script>
+    <script src="js/knockout-mapping-latest.js"></script>
+    <script src="js/scripts.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+﻿{
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get"
+      ],
+      "authLevel": "anonymous"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "table",
+      "name": "inQuestions",
+      "tableName": "Questions",
+      "take": "1",
+      "connection": "storageConnection",
+      "direction": "in"
+    },
+    {
+      "type": "table",
+      "name": "inVotes",
+      "tableName": "Votes",
+      "connection": "storageConnection",
+      "direction": "in"
+    }
+  ],
+  "disabled": false
+}
