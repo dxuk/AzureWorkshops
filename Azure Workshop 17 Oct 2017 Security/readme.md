@@ -1,1 +1,1 @@
-Azure Workshop 10 Oct 2017 Serverless
+__Azure Workshop 17 Oct 2017 Security__
